@@ -18,6 +18,27 @@
       super.connectedCallback();
 
       this.rstring = "";
+
+
+      navigator.usb.getDevices()
+      .then(availableDevices => {
+        if(availableDevices.length){
+          this.device = availableDevices[0];
+          console.log("Device found:", this.device);
+          return this.device.open(); // Begin a session.
+        }
+        throw "no device available yet";
+      })
+      .then(_ => this.device.selectConfiguration(1))
+      .then(_ => this.device.claimInterface(2))
+      .then(_ => this.device.controlTransferOut({
+          requestType: 'class',
+          recipient: 'interface',
+          request: 0x22,
+          value: 0x01,
+          index: 0x02})) // Ready to receive data
+      .then(_ => { this.readFromDevice(); }) // Waiting for 64 bytes of data from endpoint #5.
+      .catch(error => { console.log(error); });
     }
 
     _deviceChanged(device, oldDevice) {
